@@ -280,9 +280,91 @@ path = r"C:\Users\16068\桌面"
 
 **最佳实践**：Python 代码里永远用 `/` 写路径；用户通过 `input()` 输入的路径天然安全，不会触发转义。
 
----
+#### 2.5 Python 缩进的作用
 
-### 3. Markdown 记笔记
+**我遇到的问题**：不理解 `for`、`if`、`print` 的缩进关系，不知道缩进的作用。
+
+**代码示例**：
+```python
+for file in files:
+    if file.endswith(".py"):
+        print(file + " 是代码文件")
+    else:
+        print(file + " 是其他文件")
+```
+
+**错误示例**：
+```python
+for file in files:
+    if file.endswith(".py"):
+print(file + " 是代码文件")    # 没缩进
+```
+
+**错误原因**：`IndentationError: expected an indented block`。Python 用缩进判断"这个 `print` 属于 `if` 还是属于 `for`"。`if` 后面需要至少一行缩进的代码，但你跳到了行首，Python 不知道你想让它执行什么。
+
+**正确理解（重点）**：
+
+- **缩进 = 层级结构**：缩进越多，所属层级越深。就像大纲：
+  ```
+  for                         → 第 1 层
+      if                      → 第 2 层（属于 for）
+          print("A")          → 第 3 层（属于 if）
+  ```
+
+- **决定代码属于哪个逻辑块**：
+  ```python
+  for file in files:          # 循环体开始
+      print(file)             # 属于 for，每轮都执行
+      if file.endswith(".py"): # 属于 for
+          print("代码")       # 属于 if，条件成立才执行
+  print("循环结束")            # 没有缩进，不属于 for，只执行一次
+  ```
+
+- **控制执行范围**：缩进 = 冒号下面"谁听谁的"。缩进 4 格是 Python 约定，Tab 也行但别混用。
+
+**我的理解**：缩进就是"代码的身份证"，告诉 Python "我属于谁"。`if` 下面缩进的代码 = `if` 的小弟，条件成立时才干活。不缩进的代码 = 自由人，不受任何条件约束，每次都执行。
+
+**下次如何避免**：
+- 任何以 `:` 结尾的行（`for`、`if`、`elif`、`else`），下一行必须缩进 4 个空格。
+- 同一层级的代码缩进格数必须一致。
+- 写完 `:` 按回车，大多数编辑器自动帮你缩进。
+
+#### 2.6 文件类型判断 — `endswith()` + `for` + `if/elif/else`
+
+**代码（classifier.py 当前版本）**：
+```python
+import os
+
+path = input("请输入文件夹路径: ")
+
+files = os.listdir(path)
+
+for file in files:
+    if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
+        print(file + " → 图片")
+    elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
+        print(file + " → 文档")
+    elif file.endswith(".py"):
+        print(file + " → 代码")
+    else:
+        print(file + " → 其他")
+```
+
+**关键知识点**：
+
+- **`str.endswith("尾巴")`**：判断字符串是否以指定内容结尾，返回 `True` 或 `False`。
+- **`or`**：逻辑"或"。`a or b` → 两者有一个是 `True` 就通过。
+- **`if` / `elif` / `else` 是排队判断**：从上到下，第一个满足的就执行，后面全部跳过。`else` 是兜底。
+- **`elif` 不是 `else if`**：Python 里必须连写成 `elif`，空格会报 `SyntaxError`。
+
+**常见错误**：
+
+| 错误写法 | 后果 |
+|---|---|
+| `if .endswith(".jpg")` 忘写 `file` | `NameError` |
+| `elif` 写成 `else if` | `SyntaxError` |
+| `else:` 后面还写条件 | `SyntaxError` |
+| `file.endswith(".jpg" or ".png")` | 语法不报错，但逻辑错误——只检查 `.jpg` |
 
 | 语法 | 效果 |
 |---|---|
