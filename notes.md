@@ -869,3 +869,176 @@ git push                ← 推上 GitHub
 - **分支是安全试验区**：在分支里随便折腾，不影响 main。试错了删掉就行。
 - **merge 是把试验成果合并回来**：分支改满意了，合进 main，成为正式版本。
 - **学会 Git 的目的**：让学习过程可追踪、可复盘、可展示。每个项目都是一条清晰的 commit 时间线。
+
+---
+
+## 文件分类器项目完整笔记
+
+### 项目概述
+
+**目标**：自动把一个文件夹里的文件按类型（图片/文档/代码）移动到对应子文件夹。
+
+**完整代码**：
+```python
+import os
+
+path = input("请输入文件夹路径: ")
+
+images_folder = os.path.join(path, "images")
+docs_folder = os.path.join(path, "docs")
+code_folder = os.path.join(path, "code")
+
+os.makedirs(images_folder, exist_ok=True)
+os.makedirs(docs_folder, exist_ok=True)
+os.makedirs(code_folder, exist_ok=True)
+
+files = os.listdir(path)
+
+for file in files:
+    if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(images_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(docs_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    elif file.endswith(".py"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(code_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    else:
+        print(file + " → 跳过")
+```
+
+---
+
+### 搬家类比：理解 `os.rename`
+
+| 概念 | 代码 | 现实类比 |
+|---|---|---|
+| `file` | `"photo.jpg"` | 小明（只有名字） |
+| `path` | `"C:/test"` | 小区名 |
+| `old_path` | `os.path.join(path, file)` | 小明现在住址（完整地址） |
+| `new_path` | `os.path.join(images_folder, file)` | 小明新住址（完整地址） |
+| `os.rename` | `os.rename(旧, 新)` | 去派出所改户口地址 |
+
+**为什么 `file` 不够**：`os.listdir()` 返回的只是文件名，不含路径信息。要移动文件，必须有起点（完整旧地址）和终点（完整新地址）。
+
+**本质**：`os.rename` 在操作系统层面修改文件的路径记录。文件数据在硬盘上没动，只是"地址变了"。
+
+**为什么移动后 `os.listdir(path)` 会变化**：`os.listdir` 读的是文件夹的目录索引。`os.rename` 把文件移走后，原文件夹的目录条目消失，再次 `os.listdir` 就看不到了。
+
+---
+
+### 绝对路径 vs 相对路径
+
+**绝对路径**：从磁盘根目录开始的完整地址。不依赖当前工作目录。
+```
+C:/ai-work/oc-test/notes.md
+```
+
+**相对路径**：相对于"当前工作目录"的地址。依赖程序"站在哪里"。
+```
+notes.md               ← 当前目录下的文件
+../other/file.txt      ← 上一级目录下的文件
+```
+
+**`os.getcwd()`**：获取程序当前的"站立位置"（Current Working Directory）。
+
+```python
+import os
+print(os.getcwd())   # 例如：C:\ai-work\oc-test
+```
+
+**为什么正式项目用绝对路径更安全**：用相对路径时，在不同文件夹运行程序结果不同。用绝对路径，结果永远一致。
+
+---
+
+### `os.rename` 错误速查
+
+| 错误类型 | 原因 | Debug 方法 |
+|---|---|---|
+| `FileNotFoundError` | `old_path` 对应的文件不存在 | `print(old_path)` 检查路径是否拼错 |
+| `PermissionError` | 文件被其他程序占用，或无写入权限 | 关掉占用程序，避免操作系统保护目录 |
+| `FileExistsError` | `new_path` 已有同名文件 | 检查目标文件夹，决定覆盖还是跳过 |
+
+---
+
+### 工程思维
+
+**dry run（模拟执行）**：在真正执行危险操作前，先只打印不执行。
+```python
+if dry_run:
+    print("将要移动: " + old_path + " → " + new_path)
+else:
+    os.rename(old_path, new_path)
+```
+
+**先验证再批量**：用测试文件夹（3-5 个文件）验证逻辑正确后，再对真实文件夹执行。
+
+**真正危险的代码**：
+- `os.remove()` — 删除文件
+- `os.rename()` 目标已存在 — 覆盖
+- `shutil.rmtree()` — 递归删除整个文件夹
+- 批量操作 — 10000 个文件改错没有 Ctrl+Z
+
+**黄金法则**：任何会修改文件系统的操作，先 print 验证，再真正执行。
+
+---
+
+### 文件系统到底是什么
+
+文件系统是操作系统管理硬盘上文件的一套**目录索引**。
+
+**类比**：图书馆卡片索引。书在书架上不动，卡片告诉你每本书在哪。Python 的 `os` 模块通过操作系统查询和修改这张"卡片索引"。
+
+| 操作 | 本质 |
+|---|---|
+| `os.listdir()` | 读卡片索引（看文件夹里有什么） |
+| `os.makedirs()` | 在索引上新增一条目录卡片 |
+| `os.rename()` | 修改卡片上的位置信息 |
+| `os.remove()` | 从索引中删除一张卡片 |
+
+**为什么程序真的能改变电脑里的文件**：`os` 模块 → 操作系统 API → 硬盘驱动。这条链上每一环都是真实的调用，不是 Python 的模拟沙箱。
+
+---
+
+### 为什么路径是所有自动化项目的核心
+
+| 领域 | 路径的应用 |
+|---|---|
+| 爬虫 | 图片存哪、HTML 缓存哪、数据导出到哪 |
+| 量化 | 行情数据从哪个文件读、回测结果写到哪个目录 |
+| 文件自动化 | 分类、整理、备份——核心就是路径计算 |
+| 浏览器自动化 | 截图存哪、日志写哪、配置读哪 |
+
+**80% 的 bug 出在路径上，不是出在逻辑上。**
+
+---
+
+### 常见错误速查表
+
+| 错误行为 | 后果 | 正确做法 |
+|---|---|---|
+| 忘记 `file` 只是文件名 | `FileNotFoundError` | `old_path = os.path.join(path, file)` |
+| `os.rename` 目标已存在 | `FileExistsError` | 检查后决定覆盖或跳过 |
+| 在 `for` 循环里调用 `os.makedirs` | 每循环一次建一次，浪费性能 | 放循环外面 |
+| 依赖相对路径 | 换个文件夹运行就找不到文件 | 用绝对路径或 `input()` 指定 |
+| 不先 print 直接 rename | 批量改错无法撤销 | 先 dry run 再执行 |
+| 对重要文件夹直接跑 | 文件可能被错误移动 | 先对测试文件夹验证 |
+
+---
+
+### 今天学到的本质
+
+1. **文件路径是操作系统硬盘目录树上的坐标**，不是普通字符串
+2. **`os.rename` 改的是路径记录**，不改硬盘上的文件数据
+3. **`os.listdir` 读的是瞬时快照**，文件移动后快照过期
+4. **文件系统 = 操作系统的目录索引**，Python 通过 `os` 模块读写它
+5. **路径错误是 80% 自动化 bug 的来源**，原因往往是不理解"file ≠ 完整路径"
+6. **先 print 再 rename** = 工程界百年经验，危险操作前必须人眼验证
+7. **这套思想适用于所有自动化项目**：爬虫、量化、数据处理、文件管理

@@ -14,13 +14,19 @@ files = os.listdir(path)
 
 for file in files:
     if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
+        old_path = os.path.join(path, file)
         new_path = os.path.join(images_folder, file)
-        print(file + " → " + new_path)
+        print(old_path + " → " + new_path)
+        os.rename(old_path, new_path)
     elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
+        old_path = os.path.join(path, file)
         new_path = os.path.join(docs_folder, file)
-        print(file + " → " + new_path)
+        print(old_path + " → " + new_path)
+        os.rename(old_path, new_path)
     elif file.endswith(".py"):
+        old_path = os.path.join(path, file)
         new_path = os.path.join(code_folder, file)
-        print(file + " → " + new_path)
+        print(old_path + " → " + new_path)
+        os.rename(old_path, new_path)
     else:
         print(file + " → 跳过")
