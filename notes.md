@@ -459,8 +459,68 @@ os.makedirs(images_folder, exist_ok=True)
 
 创建文件夹只需要做一次，放进 `for` 循环里每判断一个文件就建一次，浪费性能。循环里只做"判断 + 打印（未来：移动）"。
 
+#### 2.9 文件分类器 — 完整流程与工程思维
+
+**完整最终代码**：
+```python
+import os
+
+path = input("请输入文件夹路径: ")
+
+images_folder = os.path.join(path, "images")
+docs_folder = os.path.join(path, "docs")
+code_folder = os.path.join(path, "code")
+
+os.makedirs(images_folder, exist_ok=True)
+os.makedirs(docs_folder, exist_ok=True)
+os.makedirs(code_folder, exist_ok=True)
+
+files = os.listdir(path)
+
+for file in files:
+    if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(images_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(docs_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    elif file.endswith(".py"):
+        old_path = os.path.join(path, file)
+        new_path = os.path.join(code_folder, file)
+        print("移动: " + old_path + " → " + new_path)
+        os.rename(old_path, new_path)
+    else:
+        print(file + " → 跳过")
+```
+
+**搬家类比**：`file` = 人名，`old_path` = 现住址，`new_path` = 新住址，`os.rename` = 改户口地址。
+
+**`os.rename` 本质**：在操作系统层面修改文件路径记录，文件数据在硬盘上没动。
+
+**三种常见错误**：
+
+| 错误 | 原因 | Debug |
+|---|---|---|
+| `FileNotFoundError` | old_path 不存在 | `print(old_path)` |
+| `PermissionError` | 文件被占用 | 关掉占用程序 |
+| `FileExistsError` | new_path 已有同名 | 检查目标文件夹 |
+
+**工程习惯**：
+- **dry run**：先 print 验证，再 rename 执行
+- **先验证再批量**：测试文件夹跑通 → 真实文件夹执行
+- **危险操作清单**：`os.remove()`、批量 rename、`shutil.rmtree()`
+
+**文件系统本质**：操作系统的硬盘目录索引。Python 通过 `os` 模块读写这张索引。
+
+**为什么路径是所有自动化核心**：80% 的 bug 出在路径上。爬虫、量化、文件管理、浏览器自动化都离不开路径操作。
+
+### 3. Markdown 记笔记
+
 | 语法 | 效果 |
-|---|---|
 |---|---|
 | `# 标题` | 一级标题 |
 | `## 标题` | 二级标题 |
@@ -872,173 +932,210 @@ git push                ← 推上 GitHub
 
 ---
 
-## 文件分类器项目完整笔记
+### 13. GitHub SSH 详解
 
-### 项目概述
+#### 13.1 我遇到的问题
 
-**目标**：自动把一个文件夹里的文件按类型（图片/文档/代码）移动到对应子文件夹。
+- `git push` 失败 → `Failed to connect to github.com port 443`
+- `git pull` 失败 → `Connection was reset`
+- HTTPS 连接不稳定，每次 push 可能因为网络波动中断
+- 本地改完代码，GitHub 云端就是收不到
 
-**完整代码**：
-```python
-import os
+这些问题让我明白：**不是 Git 出了问题，是连接 GitHub 的方式出了问题**。
 
-path = input("请输入文件夹路径: ")
+#### 13.2 SSH 是什么
 
-images_folder = os.path.join(path, "images")
-docs_folder = os.path.join(path, "docs")
-code_folder = os.path.join(path, "code")
+**SSH = Secure Shell（安全外壳协议）**。它是一种让两台电脑之间**加密通信**的协议。
 
-os.makedirs(images_folder, exist_ok=True)
-os.makedirs(docs_folder, exist_ok=True)
-os.makedirs(code_folder, exist_ok=True)
+在 GitHub 场景里，SSH 让我的电脑和 GitHub 之间建立一条**安全的、不需要每次输密码**的连接通道。
 
-files = os.listdir(path)
+> **一句话**：SSH = 让我的电脑和 GitHub 安全互相信任的一套钥匙系统。
 
-for file in files:
-    if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
-        old_path = os.path.join(path, file)
-        new_path = os.path.join(images_folder, file)
-        print("移动: " + old_path + " → " + new_path)
-        os.rename(old_path, new_path)
-    elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
-        old_path = os.path.join(path, file)
-        new_path = os.path.join(docs_folder, file)
-        print("移动: " + old_path + " → " + new_path)
-        os.rename(old_path, new_path)
-    elif file.endswith(".py"):
-        old_path = os.path.join(path, file)
-        new_path = os.path.join(code_folder, file)
-        print("移动: " + old_path + " → " + new_path)
-        os.rename(old_path, new_path)
-    else:
-        print(file + " → 跳过")
+它**不是 Git**（Git 是版本管理工具），也**不是 GitHub**（GitHub 是代码托管网站），它只是**连接方式**。
+
+#### 13.3 SSH 为什么能解决连接问题
+
+**HTTPS 方式**：
 ```
+https://github.com/用户名/仓库名.git
+```
+- 走 443 端口，容易被墙或代理不稳定
+- 每次 push 需要验证 Token 或密码
 
----
+**SSH 方式**：
+```
+git@github.com:用户名/仓库名.git
+```
+- 走 22 端口，加密通道
+- 配好之后不用每次输密码
+- 更稳定，push/pull 成功率高
 
-### 搬家类比：理解 `os.rename`
+#### 13.4 公钥和私钥是什么
 
-| 概念 | 代码 | 现实类比 |
+**用门禁卡类比**：
+
+| 名称 | 常见文件名 | 放在哪里 | 能不能公开 | 作用 |
+|---|---|---|---|---|
+| 私钥 | `id_ed25519` | 你电脑里 | **绝对不能** | 证明"我就是我" |
+| 公钥 | `id_ed25519.pub` | GitHub 上 | 可以公开 | 让别人验证"你真是你" |
+
+- `.pub` 结尾的是**公钥** → 复制到 GitHub
+- 没有 `.pub` 的是**私钥** → 绝对不能泄露，不要复制，不要发微信
+
+**类比**：公钥像小区门禁系统里的住户登记表（放在物业那里，谁都能查），私钥像你手里的门禁卡（你自己保管，不借人）。
+
+#### 13.5 GitHub SSH 工作流程
+
+1. 我执行 `git push`
+2. 我的电脑尝试连接 GitHub
+3. GitHub 问："你是谁？"
+4. 我的电脑用**私钥**签名证明身份
+5. GitHub 用我账户里的**公钥**验证签名
+6. 验证通过 → 允许同步代码
+
+> 就像刷卡进小区：门禁系统有你的登记信息（公钥），你刷卡（私钥），匹配成功，门开。
+
+#### 13.6 SSH 和 Git 的关系
+
+| 操作 | 需要 SSH 吗 | 为什么 |
 |---|---|---|
-| `file` | `"photo.jpg"` | 小明（只有名字） |
-| `path` | `"C:/test"` | 小区名 |
-| `old_path` | `os.path.join(path, file)` | 小明现在住址（完整地址） |
-| `new_path` | `os.path.join(images_folder, file)` | 小明新住址（完整地址） |
-| `os.rename` | `os.rename(旧, 新)` | 去派出所改户口地址 |
+| `git add` | 不需要 | 只是本地暂存 |
+| `git commit` | 不需要 | 只是本地存档 |
+| `git status` | 不需要 | 只是本地查看 |
+| `git push` | **需要** | 要和 GitHub 通信 |
+| `git pull` | **需要** | 要和 GitHub 通信 |
+| `git clone` | **需要** | 要从 GitHub 下载 |
 
-**为什么 `file` 不够**：`os.listdir()` 返回的只是文件名，不含路径信息。要移动文件，必须有起点（完整旧地址）和终点（完整新地址）。
+**记住**：只有需要和 GitHub 通信的操作才会用到 SSH。
 
-**本质**：`os.rename` 在操作系统层面修改文件的路径记录。文件数据在硬盘上没动，只是"地址变了"。
+#### 13.7 查看当前用 HTTPS 还是 SSH
 
-**为什么移动后 `os.listdir(path)` 会变化**：`os.listdir` 读的是文件夹的目录索引。`os.rename` 把文件移走后，原文件夹的目录条目消失，再次 `os.listdir` 就看不到了。
-
----
-
-### 绝对路径 vs 相对路径
-
-**绝对路径**：从磁盘根目录开始的完整地址。不依赖当前工作目录。
-```
-C:/ai-work/oc-test/notes.md
+```powershell
+git remote -v
 ```
 
-**相对路径**：相对于"当前工作目录"的地址。依赖程序"站在哪里"。
+如果看到：
 ```
-notes.md               ← 当前目录下的文件
-../other/file.txt      ← 上一级目录下的文件
+origin  https://github.com/332165832trump-gif/ai-learning.git (fetch)
+origin  https://github.com/332165832trump-gif/ai-learning.git (push)
 ```
+→ 当前用 **HTTPS**
 
-**`os.getcwd()`**：获取程序当前的"站立位置"（Current Working Directory）。
-
-```python
-import os
-print(os.getcwd())   # 例如：C:\ai-work\oc-test
+如果看到：
 ```
+origin  git@github.com:332165832trump-gif/ai-learning.git (fetch)
+origin  git@github.com:332165832trump-gif/ai-learning.git (push)
+```
+→ 当前用 **SSH**
 
-**为什么正式项目用绝对路径更安全**：用相对路径时，在不同文件夹运行程序结果不同。用绝对路径，结果永远一致。
+#### 13.8 把仓库从 HTTPS 改成 SSH
 
----
-
-### `os.rename` 错误速查
-
-| 错误类型 | 原因 | Debug 方法 |
-|---|---|---|
-| `FileNotFoundError` | `old_path` 对应的文件不存在 | `print(old_path)` 检查路径是否拼错 |
-| `PermissionError` | 文件被其他程序占用，或无写入权限 | 关掉占用程序，避免操作系统保护目录 |
-| `FileExistsError` | `new_path` 已有同名文件 | 检查目标文件夹，决定覆盖还是跳过 |
-
----
-
-### 工程思维
-
-**dry run（模拟执行）**：在真正执行危险操作前，先只打印不执行。
-```python
-if dry_run:
-    print("将要移动: " + old_path + " → " + new_path)
-else:
-    os.rename(old_path, new_path)
+```powershell
+git remote set-url origin git@github.com:332165832trump-gif/ai-learning.git
 ```
 
-**先验证再批量**：用测试文件夹（3-5 个文件）验证逻辑正确后，再对真实文件夹执行。
+改完验证：
+```powershell
+git remote -v
+```
 
-**真正危险的代码**：
-- `os.remove()` — 删除文件
-- `os.rename()` 目标已存在 — 覆盖
-- `shutil.rmtree()` — 递归删除整个文件夹
-- 批量操作 — 10000 个文件改错没有 Ctrl+Z
+#### 13.9 测试 SSH 是否连通
 
-**黄金法则**：任何会修改文件系统的操作，先 print 验证，再真正执行。
+```powershell
+ssh -T git@github.com
+```
 
----
+成功时会显示：
+```
+Hi 332165832trump-gif! You've successfully authenticated, but GitHub does not provide shell access.
+```
 
-### 文件系统到底是什么
+**这句话的意思**：认证成功了！"does not provide shell access" 不是错误——GitHub 不让你像登录服务器一样操作它，只能用来 push/pull，这是正常的。
 
-文件系统是操作系统管理硬盘上文件的一套**目录索引**。
+#### 13.10 SSH 常见错误
 
-**类比**：图书馆卡片索引。书在书架上不动，卡片告诉你每本书在哪。Python 的 `os` 模块通过操作系统查询和修改这张"卡片索引"。
+**`Permission denied (publickey)`**
 
-| 操作 | 本质 |
+原因：GitHub 没有识别到我的公钥。可能是：
+- 还没生成 SSH key → 执行 `ssh-keygen -t ed25519`
+- 没把公钥添加到 GitHub → 去 https://github.com/settings/keys 粘贴
+- 用错了 key → 检查 `~/.ssh/` 下的文件
+
+**`Could not resolve hostname github.com`**
+
+原因：DNS 或网络问题，电脑找不到 github.com 的 IP 地址。
+
+**`Connection timed out`**
+
+原因：网络不通、代理没开、防火墙拦截。
+
+**`Host key verification failed`**
+
+原因：本地没信任过 GitHub 的主机指纹。第一次连接时会提示确认，输入 `yes` 即可。
+
+#### 13.11 SSH 和 AI 学习工作流的关系
+
+| 角色 | 做什么 |
 |---|---|
-| `os.listdir()` | 读卡片索引（看文件夹里有什么） |
-| `os.makedirs()` | 在索引上新增一条目录卡片 |
-| `os.rename()` | 修改卡片上的位置信息 |
-| `os.remove()` | 从索引中删除一张卡片 |
+| **ChatGPT** | 规划方案、解释概念、纠正错误 |
+| **OpenCode / Codex** | 修改代码和笔记文件 |
+| **Git** | 记录每次修改的版本 |
+| **GitHub** | 保存和展示学习过程 |
+| **SSH** | **让电脑稳定、安全地和 GitHub 同步** |
 
-**为什么程序真的能改变电脑里的文件**：`os` 模块 → 操作系统 API → 硬盘驱动。这条链上每一环都是真实的调用，不是 Python 的模拟沙箱。
+#### 13.12 本地修改后用 SSH 上传的完整流程
 
----
+```powershell
+git status                              # 1. 看哪些文件变了
+git add .                               # 2. 暂存所有改动
+git commit -m "合适的提交信息"            # 3. 本地存档
+git push                                # 4. 通过 SSH 上传到 GitHub
+```
 
-### 为什么路径是所有自动化项目的核心
+**逐行解释**：
+- `git status`：只读命令，安全。看改了哪些文件。
+- `git add .`：标记改动，放入暂存区。不改文件。
+- `git commit`：拍快照，保存版本。从此刻起可以回到这个版本。
+- `git push`：通过 SSH 通道把本地版本发到 GitHub。
 
-| 领域 | 路径的应用 |
-|---|---|
-| 爬虫 | 图片存哪、HTML 缓存哪、数据导出到哪 |
-| 量化 | 行情数据从哪个文件读、回测结果写到哪个目录 |
-| 文件自动化 | 分类、整理、备份——核心就是路径计算 |
-| 浏览器自动化 | 截图存哪、日志写哪、配置读哪 |
+#### 13.13 AI 改完后的两种情况
 
-**80% 的 bug 出在路径上，不是出在逻辑上。**
+**情况 A：OpenCode 改的是本地文件**
 
----
+```powershell
+git status → git add . → git commit -m "..." → git push
+```
 
-### 常见错误速查表
+**情况 B：Codex 在云端创建了新分支**
 
-| 错误行为 | 后果 | 正确做法 |
+```powershell
+git pull                    # 拉取新分支信息
+git branch -a               # 查看所有分支
+git diff main..分支名 -- 文件 # 看 Codex 改了啥
+git checkout main           # 切回 main
+git merge 分支名             # 满意就合并
+git push                    # 同步到 GitHub
+```
+
+#### 13.14 今日关键理解
+
+- SSH 不是新工具，是**一种更稳定的连接方式**
+- **公钥给 GitHub，私钥留电脑**——这是 SSH 的核心规则
+- Git 本地操作（add/commit）不需要 SSH
+- 只有 push/pull/clone 才需要和 GitHub 通信
+- SSH 让 GitHub 知道：**这台电脑是我授权过的**
+- 配好 SSH 后，AI 编程学习流程会更稳定
+
+#### 13.15 SSH 日常速查表
+
+| 场景 | 命令 | 作用 |
 |---|---|---|
-| 忘记 `file` 只是文件名 | `FileNotFoundError` | `old_path = os.path.join(path, file)` |
-| `os.rename` 目标已存在 | `FileExistsError` | 检查后决定覆盖或跳过 |
-| 在 `for` 循环里调用 `os.makedirs` | 每循环一次建一次，浪费性能 | 放循环外面 |
-| 依赖相对路径 | 换个文件夹运行就找不到文件 | 用绝对路径或 `input()` 指定 |
-| 不先 print 直接 rename | 批量改错无法撤销 | 先 dry run 再执行 |
-| 对重要文件夹直接跑 | 文件可能被错误移动 | 先对测试文件夹验证 |
-
----
-
-### 今天学到的本质
-
-1. **文件路径是操作系统硬盘目录树上的坐标**，不是普通字符串
-2. **`os.rename` 改的是路径记录**，不改硬盘上的文件数据
-3. **`os.listdir` 读的是瞬时快照**，文件移动后快照过期
-4. **文件系统 = 操作系统的目录索引**，Python 通过 `os` 模块读写它
-5. **路径错误是 80% 自动化 bug 的来源**，原因往往是不理解"file ≠ 完整路径"
-6. **先 print 再 rename** = 工程界百年经验，危险操作前必须人眼验证
-7. **这套思想适用于所有自动化项目**：爬虫、量化、数据处理、文件管理
+| 查看远程地址 | `git remote -v` | 看当前用 HTTPS 还是 SSH |
+| 改成 SSH | `git remote set-url origin git@github.com:用户/仓库.git` | 切换连接方式 |
+| 测试 SSH | `ssh -T git@github.com` | 检查是否认证成功 |
+| 生成 SSH Key | `ssh-keygen -t ed25519` | 创建新钥匙对 |
+| 查看公钥 | `cat ~/.ssh/id_ed25519.pub` | 获取公钥内容（复制到 GitHub） |
+| 查看状态 | `git status` | 看本地变化 |
+| 提交修改 | `git add .` + `git commit -m "..."` | 记录版本 |
+| 上传 GitHub | `git push` | 通过 SSH 同步到远程 |
+| 拉取远程 | `git pull` | 获取 GitHub 最新内容 |
