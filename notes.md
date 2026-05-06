@@ -366,7 +366,101 @@ for file in files:
 | `else:` 后面还写条件 | `SyntaxError` |
 | `file.endswith(".jpg" or ".png")` | 语法不报错，但逻辑错误——只检查 `.jpg` |
 
+#### 2.7 文件分类器项目 — 路径的本质
+
+**项目当前进度**：可以列出文件、判断类型、创建分类文件夹、计算目标路径，即将实现移动。
+
+**完整代码（classifier.py 当前版本）**：
+
+```python
+import os
+
+path = input("请输入文件夹路径: ")
+
+images_folder = os.path.join(path, "images")
+docs_folder = os.path.join(path, "docs")
+code_folder = os.path.join(path, "code")
+
+os.makedirs(images_folder, exist_ok=True)
+os.makedirs(docs_folder, exist_ok=True)
+os.makedirs(code_folder, exist_ok=True)
+
+files = os.listdir(path)
+
+for file in files:
+    if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".gif"):
+        new_path = os.path.join(images_folder, file)
+        print(file + " → " + new_path)
+    elif file.endswith(".pdf") or file.endswith(".txt") or file.endswith(".docx"):
+        new_path = os.path.join(docs_folder, file)
+        print(file + " → " + new_path)
+    elif file.endswith(".py"):
+        new_path = os.path.join(code_folder, file)
+        print(file + " → " + new_path)
+    else:
+        print(file + " → 跳过")
+```
+
+**核心理解：路径不是普通字符串**
+
+`os.path.join("C:/test", "images", "photo.jpg")` → `"C:/test/images/photo.jpg"`
+
+| 概念 | 是什么 | 例子 |
+|---|---|---|
+| `path`（用户输入） | 用户指定的文件夹路径 | `"C:/test"` |
+| `images_folder` | 分类后的子文件夹路径 | `"C:/test/images"` |
+| `file`（循环变量） | 光秃秃的文件名，不是路径 | `"photo.jpg"` |
+| `new_path`（目标路径） | 文件搬家后的完整地址 | `"C:/test/images/photo.jpg"` |
+
+**为什么不能用 `path + "/images/" + file` 拼路径？**
+
+三个隐患：
+1. **`\` 是 Python 转义符**：`"\images"` 里的 `\i` 可能被吃掉或转义
+2. **Windows 和 Linux 分隔符不同**：`\` vs `/`，手写死一个换平台就炸
+3. **path 末尾可能有 `/`**：`"C:/test/" + "/images/"` → 双斜杠 `"C:/test//images/photo.jpg"`
+
+**`os.path.join` 的本质**：它是"懂平台规则的路径拼接器"。你把积木块扔给它，它保证拼出合法路径，该加什么分隔符、该不该去重，它全管。
+
+**移动文件的本质**：
+
+文件移动 = 把文件的"地址（路径）"从旧地址改成新地址。
+
+```
+旧地址：C:/test/photo.jpg        （文件现在在哪）
+新地址：C:/test/images/photo.jpg  （文件要去哪）
+```
+
+`os.rename(旧地址, 新地址)` 做的就是这件事——不是复制再删除，是直接改路径。
+
+**搬家需要两个完整路径**：
+
+| 需要 | 怎么拼 | 结果 |
+|---|---|---|
+| 起点（旧地址） | `os.path.join(path, file)` | `"C:/test/photo.jpg"` |
+| 终点（新地址） | `os.path.join(images_folder, file)` | `"C:/test/images/photo.jpg"` |
+
+有了这两个地址，下一步就是 `os.rename(旧地址, 新地址)` 一步搬家。
+
+#### 2.8 创建文件夹 — `os.makedirs` 详解
+
+```python
+os.makedirs(images_folder, exist_ok=True)
+```
+
+- **`os.makedirs(路径)`**：创建文件夹。`s` 表示可以创建多层（`a/b/c` 一次性全建好）。
+- **`exist_ok=True`**：如果文件夹已经存在，安静跳过，不报错。
+  - 不加 → 第二次运行时 `FileExistsError` 崩溃。
+  - 加了 → 重复运行完全安全，幂等操作。
+- **`os.mkdir()` vs `os.makedirs()`**：
+  - `mkdir()` 只能建一层，父目录不存在就报错
+  - `makedirs()` 自动补全中间每一层，更稳
+
+**为什么放在循环外面创建？**
+
+创建文件夹只需要做一次，放进 `for` 循环里每判断一个文件就建一次，浪费性能。循环里只做"判断 + 打印（未来：移动）"。
+
 | 语法 | 效果 |
+|---|---|
 |---|---|
 | `# 标题` | 一级标题 |
 | `## 标题` | 二级标题 |
