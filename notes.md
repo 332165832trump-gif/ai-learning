@@ -1,12 +1,10 @@
-# 编程学习笔记
+# 编程学习笔记总索引
 
-## 我的学习目标
+## 我的核心学习方法
 
 未来真正值钱的不是"比 AI 敲代码快"，而是：
 
 > 懂业务 + 会拆问题 + 会指挥 AI + 会验证结果 + 能把流程自动化
-
-我不是为了学 Python 而学 Python，而是为了学会：用 AI 辅助写代码、看懂代码、修改代码、判断 AI 写得对不对、把重复劳动自动化。
 
 ## 学习主线
 
@@ -16,37 +14,29 @@
 4. **数据采集** → 网页抓取、API 调用（下一站）
 5. **金融建模与量化** → 数据分析、策略回测、风险控制（远期目标）
 
-## 详细笔记目录
+## 详细手册目录
 
-| 编号 | 主题 | 文件 |
-|------|------|------|
-| 000 | 学习路线总纲 | [docs/000-learning-roadmap.md](docs/000-learning-roadmap.md) |
-| 001 | Git 与 GitHub 基础 | [docs/001-git-github-basic.md](docs/001-git-github-basic.md) |
-| 002 | Git 分支、合并与 Codex 工作流 | [docs/002-git-branch-merge-codex.md](docs/002-git-branch-merge-codex.md) |
-| 003 | GitHub SSH 入门 | [docs/003-github-ssh-for-beginners.md](docs/003-github-ssh-for-beginners.md) |
-| 004 | Python 基础语法 | [docs/004-python-basic-syntax.md](docs/004-python-basic-syntax.md) |
-| 005 | Python 路径与文件系统 | [docs/005-python-path-and-filesystem.md](docs/005-python-path-and-filesystem.md) |
-| 006 | 文件自动分类器项目 | [docs/006-file-classifier-project.md](docs/006-file-classifier-project.md) |
-| 007 | Markdown 记笔记方法 | [docs/007-markdown-note-taking.md](docs/007-markdown-note-taking.md) |
-| 008 | AI 编程协作工作流 | [docs/008-ai-coding-workflow.md](docs/008-ai-coding-workflow.md) |
+| 编号 | 主题 | 文件 | 适合什么时候看 |
+|------|------|------|----------------|
+| 000 | 学习路线总纲 | [docs/000-learning-roadmap.md](docs/000-learning-roadmap.md) | 迷茫时回来看 |
+| 001 | Git 命令完整手册 | [docs/001-git-command-handbook.md](docs/001-git-command-handbook.md) | push 失败、忘记命令 |
+| 002 | GitHub SSH 手册 | [docs/002-github-ssh-handbook.md](docs/002-github-ssh-handbook.md) | 连不上 GitHub |
+| 003 | 分支、合并与 Codex 工作流 | [docs/003-git-branch-codex-workflow.md](docs/003-git-branch-codex-workflow.md) | Codex 改了东西 |
+| 004 | Python 基础语法手册 | [docs/004-python-basic-syntax-handbook.md](docs/004-python-basic-syntax-handbook.md) | 忘记语法怎么写 |
+| 005 | Python 文件系统手册 | [docs/005-python-filesystem-handbook.md](docs/005-python-filesystem-handbook.md) | 路径报错、函数不会用 |
+| 006 | 文件分类器项目复盘 | [docs/006-file-classifier-project-review.md](docs/006-file-classifier-project-review.md) | 复习整个项目 |
+| 007 | Markdown 记笔记方法 | [docs/007-markdown-note-taking.md](docs/007-markdown-note-taking.md) | 怎么写笔记 |
+| 008 | AI 编程协作工作流 | [docs/008-ai-coding-workflow.md](docs/008-ai-coding-workflow.md) | 不知道怎么用 AI |
+| 009 | 错误与 Debug 手册 | [docs/009-error-handbook.md](docs/009-error-handbook.md) | 报错了不知道啥意思 |
 
-## 我的学习方法
+> 每个文档末尾都有**复习问题**，学完后自测。
 
-| 角色 | 做什么 |
-|------|--------|
-| ChatGPT | 规划、解释、纠错 |
-| OpenCode | 本地写代码、改文件 |
-| Codex | 云端分支协作 |
-| Git | 记录版本 |
-| GitHub | 保存学习轨迹 |
+## 最近学习日志
 
-**学习闭环**：提出问题 → ChatGPT 拆解 → OpenCode 执行 → 我运行理解 → 写笔记 → git add/commit/push → GitHub 保存
-
-## 今日学习日志
-
-### 2026-05-07
-
-- 完成文件自动分类器项目（完整可运行）
-- 配置 GitHub SSH 密钥，解决 push/pull 连接问题
-- 重构学习笔记知识库：从单一 notes.md 拆分为 8 个模块化文档
-- 建立 README.md 仓库首页 + docs/ 知识库结构
+| 日期 | 学了什么 |
+|------|----------|
+| 2026-05-07 上午 | 文件分类器：os.listdir → for → endswith → os.path.join → os.makedirs |
+| 2026-05-07 下午 | 文件分类器：old_path + new_path + os.rename + dry run |
+| 2026-05-07 晚上 | Git push 失败 → 排查网络 → 配置 SSH |
+| 2026-05-07 深夜 | 笔记重构：单文件 → 知识库（mkdir docs/ + 9 个模块化手册） |
+| 2026-05-07 终 | 第二次重构：将笔记扩充为可检索的命令/函数百科，每篇末尾加复习问题 |
